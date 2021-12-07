@@ -12,12 +12,6 @@ plot_inout <- read.csv("plot_inout_n2k.csv",
   rename(PlotObservationID = id) %>%
   arrange(PlotObservationID)
 
-match_species <- read.csv("match_species.csv",
-  header = TRUE,
-  sep = ";",
-  dec = ","
-)
-
 match_occurrences <- read.csv("match_occurrences.csv",
   header = TRUE,
   sep = ";",
