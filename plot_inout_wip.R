@@ -42,25 +42,26 @@ plot_inout_occurrences2[cols] <- map_dfr(plot_inout_occurrences2[cols], as.facto
 
 #### Divide the dataset in countries, biogeographic regions and habitat types ####
 
-plot_inout_countries <- split(plot_inout_occurrences2, plot_inout_occurrences2$Country)
-plot_inout_bioreg <- split(plot_inout_occurrences2, plot_inout_occurrences2$Bioreg_EEA)
-plot_inout_habitat <- split(plot_inout_occurrences2, plot_inout_occurrences2$HabitatType)
+factors <- c("Country", "Bioreg_EEA", "HabitatType")
+
+plot_inout_factors <- lapply(factors, function (x) {
+  split(plot_inout_occurrences2, plot_inout_occurrences2[[x]])
+}
+  )
+
+names(plot_inout_factors) <- factors
 
 #### Number of species ####
 
-species_countries <- plot_inout_occurrences2 %>%
-  group_by(Country, n2k_inout) %>%
-  summarize(Species_richness = n_distinct(ScientificName))
+species_richness <- lapply(factors, function (x) {
+  plot_inout_occurrences2 %>%
+  group_by(.[[x]], n2k_inout) %>%
+  summarize(Species_richness = n_distinct(ScientificName)) %>%
+  rename(!!x := ".[[x]]")
+}
+)
 
-species_bioreg <- plot_inout_occurrences2 %>%
-  filter(!(Bioreg_EEA %in% "")) %>%
-  group_by(Bioreg_EEA, n2k_inout) %>%
-  summarize(Species_richness = n_distinct(ScientificName))
-
-species_habitat <- plot_inout_occurrences2 %>%
-  filter(!(HabitatType %in% c("", "?"))) %>%
-  group_by(HabitatType, n2k_inout) %>%
-  summarize(Species_richness = n_distinct(ScientificName))
+names(species_richness) <- factors
 
 #### Area ####
 
@@ -147,7 +148,7 @@ options(ggrepel.max.overlaps = Inf)
 
 # Countries #
 
-countries_p1 <- ggplot(species_countries, aes(x = n2k_inout, y = Species_richness, color = n2k_inout, fill = n2k_inout)) +
+countries_p1 <- ggplot(species_richness[["Country"]], aes(x = n2k_inout, y = Species_richness, color = n2k_inout, fill = n2k_inout)) +
   scale_color_manual(values = mypal, guide = "none") +
   scale_fill_manual(values = mypal, guide = "none") +
   geom_boxplot(aes(fill = n2k_inout, fill = after_scale(colorspace::lighten(fill, .7))),
@@ -170,7 +171,7 @@ ggarrange(countries_p1, countries_p2, countries_table,
 
 # Biogeographic regions #
 
-bioreg_p1 <- ggplot(species_bioreg, aes(x = n2k_inout, y = Species_richness, color = n2k_inout, fill = n2k_inout)) +
+bioreg_p1 <- ggplot(species_richness[["Bioreg_EEA"]], aes(x = n2k_inout, y = Species_richness, color = n2k_inout, fill = n2k_inout)) +
   scale_color_manual(values = mypal, guide = "none") +
   scale_fill_manual(values = mypal, guide = "none") +
   geom_boxplot(aes(fill = n2k_inout, fill = after_scale(colorspace::lighten(fill, .7))),
@@ -191,4 +192,9 @@ ggarrange(bioreg_p1, bioreg_p2, bioreg_table,
   ncol = 3, nrow = 1
 )
 
-# Habitat types #
+#### Countries x biogeographic regions ####
+
+plot_countries_bioreg <- plot_inout_occurrences2 %>%
+  group_by(Country, Bioreg_EEA, n2k_inout) %>%
+  summarize(Species_richness = n_distinct(ScientificName)) %>%
+  filter(!(Bioreg_EEA %in% c("", "ARC")))
