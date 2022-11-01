@@ -35,7 +35,8 @@ vascular_in_euromed <- vascular_species_distinct$Matched.concept %in%
 vascular_match <- vascular_species_distinct[vascular_in_euromed, ] %>%
   as_tibble() %>%
   rename(ScientificName = value) %>%
-  mutate(Matched.concept = ScientificName)
+  mutate(Matched.concept = ScientificName) %>%
+  mutate(ScientificName = word(ScientificName, 1, 2))
 
 match_in_occurrences <- vascular_species %>%
   filter(Matched.concept %in% vascular_match$Matched.concept)
